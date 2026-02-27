@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indian Coffee Price Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --espresso:    #2C1A0E;
+      --dark-roast:  #4A2C17;
+      --medium-roast:#7B4A2D;
+      --light-roast: #A0673A;
+      --caramel:     #C8862A;
+      --amber:       #D4A017;
+      --cream:       #F5ECD7;
+      --latte:       #EDD9B0;
+      --foam:        #FAF4E8;
+      --white:       #FFFFFF;
+      --text-dark:   #1E0F05;
+      --text-mid:    #4A2C17;
+      --text-light:  #7B5A3A;
+      --shadow-sm:   0 2px 8px rgba(44,26,14,0.12);
+      --shadow-md:   0 4px 20px rgba(44,26,14,0.18);
+      --shadow-lg:   0 8px 40px rgba(44,26,14,0.22);
+      --radius-sm:   6px;
+      --radius-md:   12px;
+      --radius-lg:   20px;
+      --transition:  all 0.25s ease;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background-color: var(--foam);
+      color: var(--text-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      background: linear-gradient(135deg, var(--espresso) 0%, var(--dark-roast) 50%, var(--medium-roast) 100%);
+      color: var(--cream);
+      padding: 3rem 1.5rem 2.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      top: -60px; left: -60px;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(212,160,23,0.18) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -80px; right: -40px;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(200,134,42,0.14) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .header-icon {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 0.75rem;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+      position: relative; z-index: 1;
+    }
+
+    header h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      position: relative; z-index: 1;
+      background: linear-gradient(90deg, var(--cream), var(--amber), var(--latte));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p.subtitle {
+      margin-top: 0.6rem;
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      color: var(--latte);
+      font-style: italic;
+      position: relative; z-index: 1;
+    }
+
+    /* ===== STATS BAR ===== */
+    .stats-bar {
+      background: linear-gradient(90deg, var(--dark-roast), var(--medium-roast), var(--dark-roast));
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      border-bottom: 3px solid var(--caramel);
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--cream);
+      font-family: 'Arial', sans-serif;
+      font-size: 0.88rem;
+    }
+
+    .stat-item .stat-icon { font-size: 1.1rem; }
+
+    .stat-item .stat-value {
+      font-weight: 700;
+      color: var(--amber);
+      font-size: 1rem;
+    }
+
+    /* ===== FILTER BAR ===== */
+    .filter-section {
+      background: var(--white);
+      border-bottom: 2px solid var(--latte);
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .filter-grid {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 0.75rem;
+      align-items: end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .filter-group label {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-light);
+    }
+
+    .filter-group select,
+    .filter-group input {
+      border: 2px solid var(--latte);
+      border-radius: var(--radius-sm);
+      padding: 0.55rem 0.8rem;
+      font-family: 'Arial', sans-serif;
+      font-size: 0.88rem;
+      color: var(--text-dark);
+      background: var(--foam);
+      outline: none;
+      transition: var(--transition);
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .filter-group select:focus,
+    .filter-group input:focus {
+      border-color: var(--caramel);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(200,134,42,0.15);
+    }
+
+    .filter-group.search-group { grid-column: span 2; }
+
+    @media (max-width: 640px) {
+      .filter-group.search-group { grid-column: span 1; }
+    }
+
+    .search-wrap { position: relative; }
+
+    .search-wrap input {
+      padding-left: 2.4rem;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1rem;
+      pointer-events: none;
+      color: var(--text-light);
+    }
+
+    .btn-reset {
+      background: var(--dark-roast);
+      color: var(--cream);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0.58rem 1.1rem;
+      font-family: 'Arial', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      align-self: flex-end;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-reset:hover {
+      background: var(--medium-roast);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    main {
+      flex: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 2rem 1.5rem;
+    }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .results-count {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.9rem;
+      color: var(--text-light);
+    }
+
+    .results-count span {
+      font-weight: 700;
+      color: var(--dark-roast);
+    }
+
+    /* ===== COFFEE GRID ===== */
+    #coffee-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* ===== COFFEE CARD ===== */
+    .coffee-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(200,134,42,0.12);
+      position: relative;
+    }
+
+    .coffee-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+      border-color: rgba(200,134,42,0.35);
+    }
+
+    .card-top-bar {
+      height: 6px;
+      background: linear-gradient(90deg, var(--espresso), var(--caramel), var(--amber));
+    }
+
+    .card-body {
+      padding: 1.25rem 1.25rem 1rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .coffee-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--dark-roast);
+      line-height: 1.3;
+      flex: 1;
+    }
+
+    .roast-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-family: 'Arial', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.25rem 0.55rem;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .roast-light    { background: #FFF3CD; color: #856404; }
+    .roast-medium   { background: #FFE0B2; color: #7B4A2D; }
+    .roast-medium-dark { background: #FFCCBC; color: #5D2B0F; }
+    .roast-dark     { background: #D7CCC8; color: #3E2723; }
+    .roast-default  { background: var(--latte); color: var(--dark-roast); }
+
+    .roaster-name {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.8rem;
+      color: var(--caramel);
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .card-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem 0.75rem;
+      margin-bottom: 1rem;
+      flex: 1;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .detail-label {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-light);
+    }
+
+    .detail-value {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.85rem;
+      color: var(--text-mid);
+      font-weight: 500;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.25rem;
+      background: linear-gradient(135deg, var(--foam), var(--cream));
+      border-top: 1px solid var(--latte);
+      gap: 0.75rem;
+    }
+
+    .price-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .price-main {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--dark-roast);
+      font-family: 'Arial', sans-serif;
+      line-height: 1;
+    }
+
+    .price-per {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.72rem;
+      color: var(--text-light);
+    }
+
+    .btn-buy {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: linear-gradient(135deg, var(--dark-roast), var(--medium-roast));
+      color: var(--cream);
+      text-decoration: none;
+      padding: 0.55rem 1rem;
+      border-radius: var(--radius-sm);
+      font-family: 'Arial', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn-buy:hover {
+      background: linear-gradient(135deg, var(--medium-roast), var(--light-roast));
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(44,26,14,0.3);
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-light);
+    }
+
+    .empty-state .empty-icon { font-size: 4rem; margin-bottom: 1rem; display: block; }
+    .empty-state h3 { font-size: 1.4rem; color: var(--medium-roast); margin-bottom: 0.5rem; }
+    .empty-state p { font-family: 'Arial', sans-serif; font-size: 0.9rem; }
+
+    /* ===== LOADING ===== */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(245,236,215,0.75);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(2px);
+    }
+
+    .loading-overlay.active { display: flex; }
+
+    .spinner {
+      width: 52px; height: 52px;
+      border: 5px solid var(--latte);
+      border-top-color: var(--dark-roast);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: var(--espresso);
+      color: var(--latte);
+      text-align: center;
+      padding: 1.75rem 1.5rem;
+      font-family: 'Arial', sans-serif;
+      font-size: 0.85rem;
+      margin-top: auto;
+      border-top: 3px solid var(--caramel);
+    }
+
+    footer a {
+      color: var(--amber);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    footer a:hover { color: var(--cream); text-decoration: underline; }
+
+    footer .footer-icons { font-size: 1.3rem; margin-bottom: 0.5rem; }
+
+    footer .footer-sub {
+      margin-top: 0.4rem;
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .stats-bar { gap: 1rem; padding: 0.75rem 1rem; }
+      .filter-grid { grid-template-columns: 1fr 1fr; }
+      #coffee-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+      main { padding: 1.25rem 1rem; }
+    }
+
+    @media (max-width: 480px) {
+      header { padding: 2rem 1rem 1.75rem; }
+      .filter-grid { grid-template-columns: 1fr; }
+      .filter-group.search-group { grid-column: span 1; }
+      #coffee-grid { grid-template-columns: 1fr; }
+      .stats-bar { flex-direction: column; gap: 0.5rem; align-items: center; }
+    }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--foam); }
+    ::-webkit-scrollbar-thumb { background: var(--medium-roast); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--dark-roast); }
+  </style>
+</head>
+<body>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- ===== HEADER ===== -->
+  <header>
+    <span class="header-icon">☕</span>
+    <h1>Indian Coffee Price Tracker</h1>
+    <p class="subtitle">
+      Discover &amp; compare specialty coffee from across India &mdash;
+      <strong><%= totalCount %></strong> coffees from
+      <strong><%= roasters.length %></strong> roasters
+    </p>
+  </header>
+
+  <!-- ===== STATS BAR ===== -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <span class="stat-icon">🫘</span>
+      <span>Total Coffees:</span>
+      <span class="stat-value" id="stat-total"><%= totalCount %></span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon">🏪</span>
+      <span>Roasters:</span>
+      <span class="stat-value"><%= roasters.length %></span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon">💰</span>
+      <span>Price Range:</span>
+      <span class="stat-value" id="stat-price-range">
+        <% if (coffees && coffees.length > 0) { %>
+          <% const prices = coffees.map(c => c.price).filter(p => p > 0); %>
+          <% if (prices.length > 0) { %>
+            Rs.<%= Math.min(...prices) %> – Rs.<%= Math.max(...prices) %>
+          <% } else { %>
+            N/A
+          <% } %>
+        <% } else { %>
+          N/A
+        <% } %>
+      </span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon">🌄</span>
+      <span>Origins tracked across India</span>
+    </div>
+  </div>
+
+  <!-- ===== FILTER BAR ===== -->
+  <section class="filter-section" aria-label="Filter coffees">
+    <div class="filter-grid">
+
+      <div class="filter-group">
+        <label for="filter-roaster">Roaster</label>
+        <select id="filter-roaster">
+          <option value="">All Roasters</option>
+          <% roasters.forEach(function(r) { %>
+            <option value="<%= r %>"><%= r %></option>
+          <% }); %>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-roast">Roast Level</label>
+        <select id="filter-roast">
+          <option value="">All Roasts</option>
+          <option value="light">Light</option>
+          <option value="medium">Medium</option>
+          <option value="medium-dark">Medium Dark</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-process">Processing Method</label>
+        <select id="filter-process">
+          <option value="">All Methods</option>
+          <option value="washed">Washed</option>
+          <option value="natural">Natural</option>
+          <option value="honey">Honey</option>
+          <option value="anaerobic">Anaerobic</option>
+          <option value="wet-hulled">Wet Hulled</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-sort">Sort By</label>
+        <select id="filter-sort">
+          <option value="name_asc">Name (A–Z)</option>
+          <option value="name_desc">Name (Z–A)</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="price_per_100g_asc">Price/100g: Low–High</option>
+          <option value="price_per_100g_desc">Price/100g: High–Low</option>
+          <option value="roaster_asc">Roaster (A–Z)</option>
+        </select>
+      </div>
+
+      <div class="filter-group search-group">
+        <label for="filter-search">Search</label>
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            id="filter-search"
+            placeholder="Search by name, roaster, origin…"
+            autocomplete="off"
+          >
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>&nbsp;</label>
+        <button class="btn-reset" id="btn-reset">↺ Reset</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== MAIN ===== -->
+  <main>
+    <div class="results-header">
+      <p class="results-count">Showing <span id="shown-count"><%= coffees.length %></span> of <span id="total-count"><%= totalCount %></span> coffees</p>
+    </div>
+
+    <div id="coffee-grid">
+      <% if (coffees && coffees.length > 0) { %>
+        <% coffees.forEach(function(coffee) { %>
+          <%- include('partials/coffee-card', { coffee: coffee }) %>
+        <% }); %>
+      <% } else { %>
+        <div class="empty-state">
+          <span class="empty-icon">☕</span>
+          <h3>No coffees found</h3>
+          <p>Try adjusting your filters or check back soon for new listings.</p>
+        </div>
+      <% } %>
+    </div>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <div class="footer-icons">☕ 🫘 🌿</div>
+    <p>
+      <strong>Indian Coffee Price Tracker</strong> &mdash;
+      Helping you find the best specialty coffee deals across India.
+    </p>
+    <p class="footer-sub">
+      Prices updated regularly. All prices in Indian Rupees (Rs.). Data sourced from roaster websites.
+    </p>
+  </footer>
+
+  <!-- ===== JAVASCRIPT ===== -->
+  <script>
+    (function () {
+      'use strict';
+
+      // ---- DOM refs ----
+      const roasterSel  = document.getElementById('filter-roaster');
+      const roastSel    = document.getElementById('filter-roast');
+      const processSel  = document.getElementById('filter-process');
+      const sortSel     = document.getElementById('filter-sort');
+      const searchInput = document.getElementById('filter-search');
+      const resetBtn    = document.getElementById('btn-reset');
+      const grid        = document.getElementById('coffee-grid');
+      const shownCount  = document.getElementById('shown-count');
+      const totalCount  = document.getElementById('total-count');
+      const statTotal   = document.getElementById('stat-total');
+      const statPrice   = document.getElementById('stat-price-range');
+      const loadingOverlay = document.getElementById('loading-overlay');
+
+      let debounceTimer = null;
+
+      // ---- Roast badge class ----
+      function roastClass(level) {
+        if (!level) return 'roast-default';
+        const l = level.toLowerCase().replace(/\s+/g, '-');
+        if (l.includes('light'))       return 'roast-light';
+        if (l.includes('medium-dark') || l.includes('medium dark')) return 'roast-medium-dark';
+        if (l.includes('medium'))      return 'roast-medium';
+        if (l.includes('dark'))        return 'roast-dark';
+        return 'roast-default';
+      }
+
+      // ---- Render a single card ----
+      function renderCard(coffee) {
+        const price = (coffee.price && coffee.price > 0)
+          ? `Rs.${Number(coffee.price).toLocaleString('en-IN')}`
+          : 'N/A';
+        const weight = coffee.weight ? `${coffee.weight}g` : 'N/A';
+        const pricePer = (coffee.price_per_100g && coffee.price_per_100g > 0)
+          ? `Rs.${Number(coffee.price_per_100g).toFixed(2)} / 100g`
+          : '';
+        const roast  = coffee.roast_level || 'N/A';
+        const method = coffee.processing_method || 'N/A';
+        const origin = coffee.origin || 'India';
+        const url    = coffee.url || '#';
+        const rc     = roastClass(coffee.roast_level);
+
+        return `
+          <article class="coffee-card">
+            <div class="card-top-bar"></div>
+            <div class="card-body">
+              <div class="card-header">
+                <h2 class="coffee-name">${escHtml(coffee.name || 'Unknown Coffee')}</h2>
+                <span class="roast-badge ${rc}">${escHtml(roast)}</span>
+              </div>
+              <p class="roaster-name">🏪 ${escHtml(coffee.roaster || 'Unknown Roaster')}</p>
+              <div class="card-details">
+                <div class="detail-item">
+                  <span class="detail-label">Origin</span>
+                  <span class="detail-value">🌄 ${escHtml(origin)}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Weight</span>
+                  <span class="detail-value">⚖️ ${escHtml(weight)}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Processing</span>
+                  <span class="detail-value">⚙️ ${escHtml(method)}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Price/100g</span>
+                  <span class="detail-value">📊 ${escHtml(pricePer || 'N/A')}</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="price-section">
+                <span class="price-main">${escHtml(price)}</span>
+                ${weight !== 'N/A' ? `<span class="price-per">${escHtml(weight)}</span>` : ''}
+              </div>
+              <a href="${escHtml(url)}" target="_blank" rel="noopener noreferrer" class="btn-buy">
+                View Deal ↗
+              </a>
+            </div>
+          </article>
+        `;
+      }
+
+      // ---- HTML escape ----
+      function escHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      // ---- Build query params ----
+      function buildParams() {
+        const p = new URLSearchParams();
+        if (roasterSel.value)  p.set('roaster',  roasterSel.value);
+        if (roastSel.value)    p.set('roast',    roastSel.value);
+        if (processSel.value)  p.set('process',  processSel.value);
+        if (sortSel.value)     p.set('sort',     sortSel.value);
+        if (searchInput.value.trim()) p.set('search', searchInput.value.trim());
+        return p;
+      }
+
+      // ---- Fetch & re-render ----
+      async function fetchAndRender() {
+        loadingOverlay.classList.add('active');
+        try {
+          const params = buildParams();
+          const res = await fetch(`/api/coffees?${params.toString()}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+
+          const coffees = Array.isArray(data) ? data : (data.coffees || []);
+          const count   = Array.isArray(data) ? data.length : (data.total || coffees.length);
+
+          // Render cards
+          if (coffees.length === 0) {
+            grid.innerHTML = `
+              <div class="empty-state">
+                <span class="empty-icon">☕</span>
+                <h3>No coffees found</h3>
+                <p>Try adjusting your filters or search terms.</p>
+              </div>`;
+          } else {
+            grid.innerHTML = coffees.map(renderCard).join('');
+          }
+
+          // Update counts
+          shownCount.textContent = coffees.length;
+          if (statTotal) statTotal.textContent = count;
+
+          // Update price range stat
+          if (statPrice && coffees.length > 0) {
+            const prices = coffees.map(c => parseFloat(c.price)).filter(p => p > 0);
+            if (prices.length > 0) {
+              statPrice.textContent =
+                `Rs.${Math.min(...prices).toLocaleString('en-IN')} – Rs.${Math.max(...prices).toLocaleString('en-IN')}`;
+            } else {
+              statPrice.textContent = 'N/A';
+            }
+          }
+
+        } catch (err) {
+          console.error('Failed to fetch coffees:', err);
+          grid.innerHTML = `
+            <div class="empty-state">
+              <span class="empty-icon">⚠️</span>
+              <h3>Something went wrong</h3>
+              <p>Could not load coffee data. Please try again later.</p>
+            </div>`;
+        } finally {
+          loadingOverlay.classList.remove('active');
+        }
+      }
+
+      // ---- Debounce helper ----
+      function debouncedFetch(delay = 350) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(fetchAndRender, delay);
+      }
+
+      // ---- Event listeners ----
+      roasterSel.addEventListener('change', () => fetchAndRender());
+      roastSel.addEventListener('change',   () => fetchAndRender());
+      processSel.addEventListener('change', () => fetchAndRender());
+      sortSel.addEventListener('change',    () => fetchAndRender());
+      searchInput.addEventListener('input', () => debouncedFetch(400));
+
+      resetBtn.addEventListener('click', function () {
+        roasterSel.value  = '';
+        roastSel.value    = '';
+        processSel.value  = '';
+        sortSel.value     = 'name_asc';
+        searchInput.value = '';
+        fetchAndRender();
+      });
+
+      // ---- Keyboard shortcut: / focuses search ----
+      document.addEventListener('keydown', function (e) {
+        if (e.key === '/' && document.activeElement !== searchInput) {
+          e.preventDefault();
+          searchInput.focus();
+        }
+        if (e.key === 'Escape') {
+          searchInput.blur();
+        }
+      });
+
+    })();
+  </script>
+</body>
+</html>
