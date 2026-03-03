@@ -8,150 +8,88 @@
 </head>
 <body>
   <header>
-    <div class="container">
-      <h1>☕ Indian Specialty Coffee Price Tracker</h1>
-      <p>Track prices from 23+ Indian coffee roasters</p>
-    </div>
+    <h1>Indian Specialty Coffee Price Tracker</h1>
+    <p>Whole bean coffees from 25+ Indian roasters</p>
   </header>
 
-  <main class="container">
-    <!-- Stats -->
-    <section class="stats">
-      <div class="stat-card">
-        <h3><%= stats.total_coffees %></h3>
-        <p>Coffees Tracked</p>
-      </div>
-      <div class="stat-card">
-        <h3><%= stats.total_roasters %></h3>
-        <p>Roasters</p>
-      </div>
-      <div class="stat-card">
-        <h3>₹<%= Math.round(stats.avg_price) %></h3>
-        <p>Avg per 100g</p>
-      </div>
-      <div class="stat-card">
-        <h3>₹<%= stats.min_price %> - ₹<%= stats.max_price %></h3>
-        <p>Price Range</p>
-      </div>
-    </section>
-
-    <!-- Filters -->
+  <main>
     <section class="filters">
-      <h2>Filter Coffees</h2>
-      <form id="filterForm">
+      <h2>Filters</h2>
+      <form method="GET" action="/">
         <div class="filter-row">
-          <select name="roaster" id="roasterFilter">
+          <select name="roaster">
             <option value="">All Roasters</option>
             <% roasters.forEach(r => { %>
-              <option value="<%= r.roaster %>"><%= r.roaster %> (<%= r.coffee_count %>)</option>
+              <option value="<%= r %>" <%= filters.roaster === r ? 'selected' : '' %>><%= r %></option>
             <% }) %>
           </select>
-          
-          <select name="roast_level" id="roastFilter">
+
+          <select name="roast">
             <option value="">All Roast Levels</option>
-            <option value="Light">Light</option>
-            <option value="Medium">Medium</option>
-            <option value="Medium-Dark">Medium-Dark</option>
-            <option value="Dark">Dark</option>
+            <% roasts.forEach(r => { %>
+              <option value="<%= r %>" <%= filters.roast === r ? 'selected' : '' %>><%= r %></option>
+            <% }) %>
           </select>
-          
-          <select name="processing" id="processingFilter">
-            <option value="">All Processing</option>
-            <option value="Washed">Washed</option>
-            <option value="Natural">Natural</option>
-            <option value="Honey">Honey</option>
-            <option value="Anaerobic">Anaerobic</option>
+
+          <select name="process">
+            <option value="">All Processing Methods</option>
+            <% processes.forEach(p => { %>
+              <option value="<%= p %>" <%= filters.process === p ? 'selected' : '' %>><%= p %></option>
+            <% }) %>
           </select>
-          
-          <input type="text" name="search" id="searchInput" placeholder="Search coffees...">
-          
+
+          <select name="sort">
+            <option value="">Sort by...</option>
+            <option value="price_asc" <%= filters.sort === 'price_asc' ? 'selected' : '' %>>Price: Low to High</option>
+            <option value="price_desc" <%= filters.sort === 'price_desc' ? 'selected' : '' %>>Price: High to Low</option>
+            <option value="price_per_100g" <%= filters.sort === 'price_per_100g' ? 'selected' : '' %>>Price per 100g</option>
+            <option value="name" <%= filters.sort === 'name' ? 'selected' : '' %>>Name</option>
+            <option value="roaster" <%= filters.sort === 'roaster' ? 'selected' : '' %>>Roaster</option>
+          </select>
+        </div>
+
+        <div class="filter-row">
+          <input type="number" name="minPrice" placeholder="Min Price (₹)" value="<%= filters.minPrice || '' %>">
+          <input type="number" name="maxPrice" placeholder="Max Price (₹)" value="<%= filters.maxPrice || '' %>">
           <button type="submit">Apply Filters</button>
-          <button type="button" onclick="resetFilters()">Reset</button>
+          <a href="/" class="btn-reset">Reset</a>
         </div>
       </form>
     </section>
 
-    <!-- Coffee Grid -->
-    <section class="coffee-grid" id="coffeeGrid">
-      <% recentCoffees.forEach(coffee => { %>
-        <div class="coffee-card">
-          <div class="coffee-header">
+    <section class="results">
+      <h2><%= coffees.length %> Coffees Found</h2>
+      
+      <div class="coffee-grid">
+        <% coffees.forEach(coffee => { %>
+          <div class="coffee-card">
             <h3><%= coffee.name %></h3>
-            <span class="roaster-badge"><%= coffee.roaster %></span>
+            <p class="roaster"><%= coffee.roaster %></p>
+            <p class="price">₹<%= coffee.price_inr %> <span class="weight">(<%= coffee.weight_grams %>g)</span></p>
+            <p class="price-per-100g">₹<%= coffee.price_per_100g %>/100g</p>
+            
+            <div class="details">
+              <% if (coffee.origin_estate && coffee.origin_estate !== 'Unknown') { %>
+                <span class="tag origin"><%= coffee.origin_estate %></span>
+              <% } %>
+              <% if (coffee.roast_level && coffee.roast_level !== 'Unknown') { %>
+                <span class="tag roast"><%= coffee.roast_level %></span>
+              <% } %>
+              <% if (coffee.processing_method && coffee.processing_method !== 'Unknown') { %>
+                <span class="tag process"><%= coffee.processing_method %></span>
+              <% } %>
+            </div>
+            
+            <a href="<%= coffee.product_url %>" target="_blank" class="btn-buy">View Product</a>
           </div>
-          <div class="coffee-details">
-            <p><strong>Origin:</strong> <%= coffee.origin_estate || 'N/A' %></p>
-            <p><strong>Roast:</strong> <%= coffee.roast_level || 'N/A' %></p>
-            <p><strong>Process:</strong> <%= coffee.processing_method || 'N/A' %></p>
-            <p><strong>Variety:</strong> <%= coffee.variety || 'N/A' %></p>
-          </div>
-          <div class="coffee-price">
-            <span class="price">₹<%= coffee.price_inr %></span>
-            <span class="weight">for <%= coffee.weight_grams %>g</span>
-            <span class="price-per-100g">₹<%= coffee.price_per_100g %>/100g</span>
-          </div>
-          <a href="<%= coffee.product_url %>" target="_blank" class="btn-primary">View Product</a>
-        </div>
-      <% }) %>
+        <% }) %>
+      </div>
     </section>
   </main>
 
   <footer>
-    <div class="container">
-      <p>Data last updated: <%= new Date().toLocaleDateString() %></p>
-      <p>Built with ☕ for the Indian coffee community</p>
-    </div>
+    <p>Data scraped on <%= new Date().toLocaleDateString() %></p>
+    <p><a href="/api/coffees">API</a> | <a href="/api/stats">Stats</a></p>
   </footer>
-
-  <script>
-    // Filter functionality
-    document.getElementById('filterForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      await loadCoffees();
-    });
-
-    async function loadCoffees() {
-      const roaster = document.getElementById('roasterFilter').value;
-      const roast = document.getElementById('roastFilter').value;
-      const processing = document.getElementById('processingFilter').value;
-      const search = document.getElementById('searchInput').value;
-      
-      const params = new URLSearchParams();
-      if (roaster) params.append('roaster', roaster);
-      if (roast) params.append('roast_level', roast);
-      if (processing) params.append('processing', processing);
-      if (search) params.append('search', search);
-      
-      const res = await fetch('/api/coffees?' + params.toString());
-      const coffees = await res.json();
-      
-      const grid = document.getElementById('coffeeGrid');
-      grid.innerHTML = coffees.map(c => `
-        <div class="coffee-card">
-          <div class="coffee-header">
-            <h3>${c.name}</h3>
-            <span class="roaster-badge">${c.roaster}</span>
-          </div>
-          <div class="coffee-details">
-            <p><strong>Origin:</strong> ${c.origin_estate || 'N/A'}</p>
-            <p><strong>Roast:</strong> ${c.roast_level || 'N/A'}</p>
-            <p><strong>Process:</strong> ${c.processing_method || 'N/A'}</p>
-            <p><strong>Variety:</strong> ${c.variety || 'N/A'}</p>
-          </div>
-          <div class="coffee-price">
-            <span class="price">₹${c.price_inr}</span>
-            <span class="weight">for ${c.weight_grams}g</span>
-            <span class="price-per-100g">₹${c.price_per_100g}/100g</span>
-          </div>
-          <a href="${c.product_url}" target="_blank" class="btn-primary">View Product</a>
-        </div>
-      `).join('');
-    }
-
-    function resetFilters() {
-      document.getElementById('filterForm').reset();
-      loadCoffees();
-    }
-  </script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const seedData = require('./seed-data.json');
 require('dotenv').config();
 
 const pool = new Pool({
@@ -6,13 +7,10 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-const seedData = require('./seed-data.json');
-
 async function seed() {
   try {
-    console.log('Starting database seed...');
+    console.log('Seeding database...');
     
-    // Insert coffees
     for (const coffee of seedData.coffees) {
       await pool.query(`
         INSERT INTO coffees (product_url, name, roaster, price_inr, weight_grams, price_per_100g, origin_estate, variety, roast_level, processing_method, scraped_date, created_at, updated_at)
@@ -34,14 +32,6 @@ async function seed() {
         coffee.processing_method,
         coffee.scraped_date
       ]);
-    }
-    
-    // Insert price history
-    for (const coffee of seedData.coffees) {
-      await pool.query(`
-        INSERT INTO price_history (product_url, price_inr, scraped_date, created_at)
-        VALUES ($1, $2, $3, NOW())
-      `, [coffee.product_url, coffee.price_inr, coffee.scraped_date]);
     }
     
     console.log(`Seeded ${seedData.coffees.length} coffees`);
